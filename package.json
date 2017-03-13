@@ -18,7 +18,6 @@
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
   "dependencies": {
     "mongodb": "^2.2.24",
-    "mongoose": "^4.8.6",
     "verror": "^1.9.0"
   },
   "devDependencies": {

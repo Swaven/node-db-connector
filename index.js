@@ -4,23 +4,15 @@ var VError = require('verror')
 
 class DbConnector {
   constructor(){
-    this._connPromises = null
-    this._mongooseDbName = null
     this._options = null
+    this._mongooseDbName = null
     this._mongoDbNames = null
   }
 
-  // TODO: check every config has a name
   init(configs, options){
     this._options = options
     this._connPromises = []
     this._mongoDbNames = []
-
-    var configsOk = configs.every((x) => {
-      return typeof x.name == 'string' || Array.isArray(x.name)
-    })
-    if (!configsOk)
-      throw new VError('DB configurations must provide a name')
 
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
@@ -37,7 +29,7 @@ class DbConnector {
         this._connectMongo(cfg, mongoclient)
       }
     }
-    //
+
     // // find mysql configs
     // var mysqlConfigs = configs.filter((x) => {return x.connectionString.startsWith('mysql://')})
     // this._connectMysql(mysqlConfigs)
@@ -91,12 +83,32 @@ class DbConnector {
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise((resolve, reject) => {
       mongoclient.connect(config.connectionString, (err, db)=>{
+        let logName = config.name || db.databaseName // name to show in logs
         if (err != null)
-          return reject(new VError(err, `Mongo/${config.name} connection error`))
+          return reject(new VError(err, `Mongo/${logName} connection error`))
 
-        this[config.name] = db // add connection object to the class
-        this._mongoDbNames.push(config.name)
-        console.log(`Mongo/${config.name} connection ok`)
+        let names = null
+        if (!config.name) // use name in connection string if not defined
+          names = [db.databaseName]
+        else if (typeof config.name == 'string')
+          names = [config.name]
+        else
+          names = config.name
+
+        for (let name of names){
+          // reference db instance by adding it as class property.
+          // if name is different than db name and more than 1 name set, reference it as instance of another db
+          if (name === db.databaseName || names.length == 1){
+            this[name] = db
+
+            // add only the main db to the list, since there's no need to close other dbs on the same socket
+            this._mongoDbNames.push(name)
+          }
+          else
+            this[name] = db.db(name)
+        }
+
+        console.log(`Mongo/${logName} connection ok`)
         resolve()
       })
     }))

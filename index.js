@@ -10,14 +10,17 @@ class DbConnector {
     this._pgDbNames = null
     this._mysqlDbNames = null
     this._pgPromise = null // pg-promise library instance
+    this._logger = null
   }
 
   init(configs, options){
-    this._options = options
+    this._options = options || {}
     this._connPromises = []
     this._mongoDbNames = []
     this._pgDbNames = []
     this._mysqlDbNames = []
+    this._logger = this._options.logger || console
+
 
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
@@ -69,7 +72,7 @@ class DbConnector {
 
   // connect using Mongoose
   _connectMongoose(config){
-    if (this._options == null || this._options.mongoose == null)
+    if (this._options.mongoose == null)
       throw new VError('Mongoose object must be provided')
 
     this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
@@ -90,7 +93,7 @@ class DbConnector {
 
       mongoosedb.once('open', () => {
         clearTimeout(tm)
-        console.log(`Mongoose/${self._mongooseDbName} connection OK`)
+        self._logger.info(`Mongoose/${self._mongooseDbName} connection OK`)
         resolve()
       })
     }))
@@ -127,7 +130,7 @@ class DbConnector {
           this[name] = db.db(name)
         }
 
-        console.log(`Mongo/${logName} connection ok`)
+        this._logger.info(`Mongo/${logName} connection ok`)
         resolve()
       })
     }))
@@ -141,7 +144,7 @@ class DbConnector {
       db.connect().then((obj) => {
         this[config.name] = db
         this._pgDbNames.push(config.name)
-        console.log(`PostgreSql/${config.name} connection OK`)
+        this._logger.info(`PostgreSql/${config.name} connection OK`)
         obj.done()
         resolve()
       })
@@ -163,7 +166,7 @@ class DbConnector {
 
         this[config.name] = mySqlPool
         this._mysqlDbNames.push(config.name)
-        console.log(`Mysql/${config.name} connection OK`)
+        this._logger.info(`Mysql/${config.name} connection OK`)
         resolve()
       })
     }))
@@ -193,9 +196,9 @@ class DbConnector {
     return new Promise((resolve, reject) =>{
       this._options.mongoose.disconnect((err) => {
         if (err != null)
-          console.log(`Mongoose/${this._mongooseDbName} connection close error`)
+          this._logger.info(`Mongoose/${this._mongooseDbName} connection close error`)
         else
-          console.log(`Mongoose/${this._mongooseDbName} connection closed`)
+          this._logger.info(`Mongoose/${this._mongooseDbName} connection closed`)
         resolve()
       })
     })
@@ -208,10 +211,10 @@ class DbConnector {
         return
 
       this._closePromises.push(this[dbName].close().then(()=>{
-        console.log(`Mongo/${dbName} connection closed`)
+        self._logger.info(`Mongo/${dbName} connection closed`)
       })
       .catch(()=>{
-        console.log(`Mongo/${dbName} connection close error`)
+        self._logger.info.log(`Mongo/${dbName} connection close error`)
         return Promise.resolve() // resolve anyway
       }))
     })
@@ -222,7 +225,7 @@ class DbConnector {
     if (this._pgDbNames.length > 0){
       this._pgPromise.end()
       for (let name of this._pgDbNames)
-        console.log(`Postgresql/${name} connection closed`)
+        this._logger.info(`Postgresql/${name} connection closed`)
     }
     return Promise.resolve()
   }
@@ -231,10 +234,10 @@ class DbConnector {
   _closeMysql(){
     this._mysqlDbNames.forEach((dbName) => {
       this._closePromises.push(this[dbName].end().then(() => {
-        console.log(`Mysql/${dbName} connection closed`)
+        self._logger.info(`Mysql/${dbName} connection closed`)
       })
       .catch(()=>{
-        console.log(`Mysql/${dbName} connection close error`)
+        self._logger.info(`Mysql/${dbName} connection close error`)
         return Promise.resolve() // resolve anyway
       }))
     })

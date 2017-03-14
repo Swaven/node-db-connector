@@ -83,29 +83,31 @@ class DbConnector {
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise((resolve, reject) => {
       mongoclient.connect(config.connectionString, (err, db)=>{
-        let logName = config.name || db.databaseName // name to show in logs
+        let logName = (config.name || db.databaseName).toString() // name to show in logs
         if (err != null)
           return reject(new VError(err, `Mongo/${logName} connection error`))
 
-        let names = null
+        let mainDb = null, secondaryDbs = []
         if (!config.name) // use name in connection string if not defined
-          names = [db.databaseName]
-        else if (typeof config.name == 'string')
-          names = [config.name]
+          mainDb = db.databaseName
+        else if (typeof config.name === 'string')
+          mainDb = config.name
+        else if (Array.isArray(config.name)){
+          // if name is an array, first value is the main db and remainders are secondary dbs
+          mainDb = config.name.splice(0,1)[0]
+          secondaryDbs = config.name
+        }
         else
-          names = config.name
+          return reject(new VError('Name must be a string or an aray of string'))
 
-        for (let name of names){
-          // reference db instance by adding it as class property.
-          // if name is different than db name and more than 1 name set, reference it as instance of another db
-          if (name === db.databaseName || names.length == 1){
-            this[name] = db
+        // reference db instance by adding it as class property
+        this[mainDb] = db
+        this._mongoDbNames.push(mainDb)
 
-            // add only the main db to the list, since there's no need to close other dbs on the same socket
-            this._mongoDbNames.push(name)
-          }
-          else
-            this[name] = db.db(name)
+        // reference secondary dbs. But their names are not added to list of dbs;
+        // since they use the same socket connection as the main db, there's no need to close them individually
+        for (let name of secondaryDbs){
+          this[name] = db.db(name)
         }
 
         console.log(`Mongo/${logName} connection ok`)

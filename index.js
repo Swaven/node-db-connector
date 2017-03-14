@@ -8,6 +8,7 @@ class DbConnector {
     this._mongooseDbName = null
     this._mongoDbNames = null
     this._pgDbNames = null
+    this._mysqlDbNames = null
     this._pgPromise = null // pg-promise library instance
   }
 
@@ -16,6 +17,7 @@ class DbConnector {
     this._connPromises = []
     this._mongoDbNames = []
     this._pgDbNames = []
+    this._mysqlDbNames = []
 
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
@@ -34,11 +36,13 @@ class DbConnector {
     }
 
     // find mysql configs
-    // var mysqlConfigs = configs.filter((x) => {return x.connectionString.startsWith('mysql://')})
-    // if (mysqlConfigs.length > 0){
-    //   this._connectMysql(mysqlConfigs)
-    // }
-    //
+    var mysqlConfigs = configs.filter((x) => {return x.connectionString.startsWith('mysql://')})
+    if (mysqlConfigs.length > 0){
+      let mysql = require('promise-mysql')
+      for (let cfg of mysqlConfigs){
+        this._connectMysql(cfg, mysql)
+      }
+    }
 
     // find postgresql configs
     var pgConfigs = configs.filter((x) => {return x.connectionString.startsWith('postgresql://')})
@@ -59,6 +63,7 @@ class DbConnector {
       this._closePostgresql()
     ]
     this._closeMongos()
+    this._closeMysql()
     return Promise.all(this._closePromises)
   }
 
@@ -146,6 +151,40 @@ class DbConnector {
     }))
   }
 
+  _connectMysql(config, mysql){
+    var mySqlPool = this._createMysqlPool(config.connectionString, mysql)
+    if (!mySqlPool)
+      return this._connPromises.push(Promise.reject(new VError(`Invalid MySql/${config.name} connection string`)))
+
+    this._connPromises.push(new Promise((resolve, reject) => {
+      mySqlPool.getConnection((err, cnx) => {
+        if (err)
+          return reject(new VError(err, `Mysql/${config.name} connection error`))
+
+        this[config.name] = mySqlPool
+        this._mysqlDbNames.push(config.name)
+        console.log(`Mysql/${config.name} connection OK`)
+        resolve()
+      })
+    }))
+  }
+
+  _createMysqlPool(connectionString, mysql){
+    let regEx = /^mysql:\/\/(.+):(.+)@(.+?)(:(\d+))?\/(.+)$/,
+        connDetails = connectionString.match(regEx)
+
+    if (!connDetails)
+      return
+
+    return mysql.createPool({
+      user     : connDetails[1],
+      password : connDetails[2],
+      host     : connDetails[3],
+      port     : connDetails[5],
+      database : connDetails[6]
+    })
+  }
+
   // close mongoose connection
   _closeMongoose(){
     if (this._mongooseDbName == null)
@@ -188,6 +227,18 @@ class DbConnector {
         console.log(`Postgresql/${name} connection closed`)
     }
     return Promise.resolve()
+  }
+
+  // closes all mysql connections
+  _closeMysql(){
+    this._mysqlDbNames.forEach((dbName) => {
+      this._closePromises.push(this[dbName].end().then(() => {
+        console.log(`Mysql/${dbName} connection closed`)
+      })
+      .catch(()=>{
+        console.log(`Mysql/${dbName} connection close error`)
+      }))
+    })
   }
 }
 

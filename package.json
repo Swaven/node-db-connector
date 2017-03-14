@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
   "dependencies": {
     "mongodb": "^2.2.24",
+    "pg-promise": "^5.6.4",
     "verror": "^1.9.0"
   },
   "devDependencies": {

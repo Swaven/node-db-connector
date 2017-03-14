@@ -7,12 +7,15 @@ class DbConnector {
     this._options = null
     this._mongooseDbName = null
     this._mongoDbNames = null
+    this._pgDbNames = null
+    this._pgPromise = null // pg-promise library instance
   }
 
   init(configs, options){
     this._options = options
     this._connPromises = []
     this._mongoDbNames = []
+    this._pgDbNames = []
 
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
@@ -30,13 +33,21 @@ class DbConnector {
       }
     }
 
-    // // find mysql configs
+    // find mysql configs
     // var mysqlConfigs = configs.filter((x) => {return x.connectionString.startsWith('mysql://')})
-    // this._connectMysql(mysqlConfigs)
+    // if (mysqlConfigs.length > 0){
+    //   this._connectMysql(mysqlConfigs)
+    // }
     //
-    // // find postgresql configs
-    // var pgConfigs = configs.filter((x) => {return x.connectionString.startsWith('postgresql://')})
-    // this._coonectPostgresql(pgConfigs)
+
+    // find postgresql configs
+    var pgConfigs = configs.filter((x) => {return x.connectionString.startsWith('postgresql://')})
+    if (pgConfigs.length > 0){
+      this._pgPromise = require('pg-promise')()
+      for (let cfg of pgConfigs){
+        this._connectPostgresql(cfg)
+      }
+    }
 
     return Promise.all(this._connPromises)
   }
@@ -44,7 +55,8 @@ class DbConnector {
   // close all connections
   close(){
     this._closePromises = [
-      this._closeMongoose()
+      this._closeMongoose(),
+      this._closePostgresql()
     ]
     this._closeMongos()
     return Promise.all(this._closePromises)
@@ -116,6 +128,24 @@ class DbConnector {
     }))
   }
 
+  // opens a postgreql connection
+  _connectPostgresql(config){
+    // Db[cfg.name] = pgp(cfg.connectionString)
+    this._connPromises.push(new Promise((resolve, reject) => {
+      let db = this._pgPromise(config.connectionString)
+      db.connect().then((obj) => {
+        this[config.name] = db
+        this._pgDbNames.push(config.name)
+        console.log(`PostgreSql/${config.name} connection OK`)
+        obj.done()
+        resolve()
+      })
+      .catch((err) => {
+        reject(new VError(err, `PostgreSql/${config.name} connection error`))
+      })
+    }))
+  }
+
   // close mongoose connection
   _closeMongoose(){
     if (this._mongooseDbName == null)
@@ -150,6 +180,15 @@ class DbConnector {
     }
   }
 
+  // closes postgresql connections
+  _closePostgresql(){
+    if (this._pgDbNames.length > 0){
+      this._pgPromise.end()
+      for (let name of this._pgDbNames)
+        console.log(`Postgresql/${name} connection closed`)
+    }
+    return Promise.resolve()
+  }
 }
 
 const self = module.exports = exports = new DbConnector()

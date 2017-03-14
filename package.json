@@ -10,6 +10,12 @@
     "type": "git",
     "url": "git+https://github.com/Swaven/node-db-connector.git"
   },
+  "keywords": [
+    "database",
+    "mongodb",
+    "mysql",
+    "postgresql"
+  ],
   "author": "Swaven",
   "license": "MIT",
   "bugs": {

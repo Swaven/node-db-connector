@@ -22,7 +22,5 @@
     "promise-mysql": "^3.0.0",
     "verror": "^1.9.0"
   },
-  "devDependencies": {
-    "grunt": "^1.0.1"
-  }
+  "devDependencies": {}
 }

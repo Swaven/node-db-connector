@@ -6,6 +6,8 @@ Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.gith
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
 Postgresql: [pg-promise](https://github.com/vitaly-t/pg-promise)
 
+This package only handles connection & disconnect. Please refer to each driver's own documentation for how to query the DBs.
+
 ## Usage
 
 ````javascript
@@ -78,7 +80,6 @@ Closes all connections.
 
 ### Example
 
-Please refer the specifc driver documentation for how to query
 ````javascript
     var db = require('node-db-connector'),
         configs = [{

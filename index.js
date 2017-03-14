@@ -203,20 +203,18 @@ class DbConnector {
 
   //  close all native mongos connections
   _closeMongos(){
-    for (let dbName of this._mongoDbNames){
+    this._mongoDbNames.forEach((dbName)=>{
       if (this[dbName] == null)
-        continue
+        return
 
-      this._closePromises.push(new Promise((resolve, reject)=>{
-        this[dbName].close((err)=>{
-          if (err != null)
-            console.log(`Mongo/${dbname} connection close error`)
-          else
-            console.log(`Mongo/${dbName} connection closed`)
-          resolve()
-        })
+      this._closePromises.push(this[dbName].close().then(()=>{
+        console.log(`Mongo/${dbName} connection closed`)
+      })
+      .catch(()=>{
+        console.log(`Mongo/${dbName} connection close error`)
+        return Promise.resolve() // resolve anyway
       }))
-    }
+    })
   }
 
   // closes postgresql connections
@@ -237,6 +235,7 @@ class DbConnector {
       })
       .catch(()=>{
         console.log(`Mysql/${dbName} connection close error`)
+        return Promise.resolve() // resolve anyway
       }))
     })
   }

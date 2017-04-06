@@ -1,10 +1,11 @@
 # node-db-connector
-Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql and Postgresql databases.
+Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql, Postgresql and Redis databases.
 
 It uses the following drivers:  
 Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/2.2/)  
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
 Postgresql: [pg-promise](https://github.com/vitaly-t/pg-promise)
+Redis: [promise-redis](https://github.com/maxbrieiev/promise-redis)
 
 This package only handles connection & disconnect. Please refer to each driver's own documentation for how to query the DBs.
 
@@ -63,6 +64,10 @@ Examples:
     {
       name: 'cms',
       connectionString: 'mysql://user:pwd@192.168.6.9:3306/prd_cms'
+    },
+    {
+      name: 'redis',
+      connectionString: 'redis://192.168.6.9:6379'
     }
 
 

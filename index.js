@@ -23,7 +23,6 @@ class DbConnector {
     this._redisDbNames = []
     this._logger = this._options.logger || console
 
-
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
     if (mongooseIdx >= 0){
@@ -52,7 +51,7 @@ class DbConnector {
     // find postgresql configs
     var pgConfigs = configs.filter((x) => {return x.connectionString.startsWith('postgresql://')})
     if (pgConfigs.length > 0){
-      this._pgPromise = require('bluebird')()
+      this._pgPromise = require('pg-promise')()
       for (let cfg of pgConfigs){
         this._connectPostgresql(cfg)
       }

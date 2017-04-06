@@ -9,6 +9,7 @@ class DbConnector {
     this._mongoDbNames = null
     this._pgDbNames = null
     this._mysqlDbNames = null
+    this._redisDbNames = null
     this._pgPromise = null // pg-promise library instance
     this._logger = null
   }
@@ -19,8 +20,8 @@ class DbConnector {
     this._mongoDbNames = []
     this._pgDbNames = []
     this._mysqlDbNames = []
+    this._redisDbNames = []
     this._logger = this._options.logger || console
-
 
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
@@ -56,6 +57,15 @@ class DbConnector {
       }
     }
 
+    // find redis configs
+    var redisConfigs = configs.filter((x) => {return x.connectionString.startsWith('redis://')})
+    if (redisConfigs.length > 0){
+      let redis = require('promise-redis')()
+      for (let cfg of redisConfigs){
+        this._connectRedis(cfg, redis)
+      }
+    }
+
     return Promise.all(this._connPromises)
   }
 
@@ -67,6 +77,7 @@ class DbConnector {
     ]
     this._closeMongos()
     this._closeMysql()
+    this._closeRedis()
     return Promise.all(this._closePromises)
   }
 
@@ -188,6 +199,29 @@ class DbConnector {
     })
   }
 
+  // connect to Redis
+  _connectRedis(config, redis){
+    this._connPromises.push(new Promise((resolve, reject) => {
+      var connected, client = redis.createClient(config.connectionString)
+      // Open connection is not promisify, use event handlers instead
+      client.on("ready", () => {
+        // reference db instance by adding it as class property
+        this[config.name] = client
+        this._redisDbNames.push(config.name)
+        this._logger.info(`Redis/${config.name} connection OK`)
+        connected = true
+        resolve()
+      })
+      // client will emit error when encountering an error connecting to the Redis server
+      // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet
+      client.on("error", (err) => {
+        this._logger.error(new VError(err, `Redis/${config.name}: an error occured`))
+        if (!connected)
+          reject(new VError(err, `Redis/${config.name} connection error`))
+      })
+    }))
+  }
+
   // close mongoose connection
   _closeMongoose(){
     if (this._mongooseDbName == null)
@@ -239,6 +273,22 @@ class DbConnector {
       .catch(()=>{
         self._logger.info(`Mysql/${dbName} connection close error`)
         return Promise.resolve() // resolve anyway
+      }))
+    })
+  }
+
+  //  close all redis connections
+  _closeRedis(){
+    this._redisDbNames.forEach((dbName)=>{
+      if (this[dbName] == null)
+        return
+      this._closePromises.push(new Promise((resolve, reject) => {
+        // Close connection is not promisify, use event handlers instead
+        this[dbName].on("end", () => {
+          self._logger.info(`Redis/${dbName} connection closed`)
+        })
+        this[dbName].quit()
+        resolve() // resolve anyway, but end event may not be logged
       }))
     })
   }

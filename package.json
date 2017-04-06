@@ -26,6 +26,7 @@
     "mongodb": "^2.2.24",
     "pg-promise": "^5.6.4",
     "promise-mysql": "^3.0.0",
+    "promise-redis": "^0.0.5",
     "verror": "^1.9.0"
   },
   "devDependencies": {}

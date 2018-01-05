@@ -118,26 +118,23 @@ class DbConnector {
         if (err != null)
           return reject(new VError(err, `Mongo/${logName} connection error`))
 
-        let mainDb = null, secondaryDbs = []
-        if (!config.name) // use name in connection string if not defined
-          mainDb = db.databaseName
+        // names of database to reference
+        let dbNames
+        if (!config.name)
+          dbNames = [db.databaseName]
         else if (typeof config.name === 'string')
-          mainDb = config.name
-        else if (Array.isArray(config.name)){
-          // if name is an array, first value is the main db and remainders are secondary dbs
-          mainDb = config.name.splice(0,1)[0]
-          secondaryDbs = config.name
-        }
+          dbNames = [config.name]
+        else if (Array.isArray(config.name))
+          dbNames = config.name
         else
           return reject(new VError('Name must be a string or an aray of string'))
 
-        // reference db instance by adding it as class property
-        this[mainDb] = db
-        this._mongoDbNames.push(mainDb)
+        // reference connected db name by adding it as class property
+        this._mongoDbNames.push(db.databaseName)
 
-        // reference secondary dbs. But their names are not added to list of dbs;
+        // reference all dbs. But their names are not added to list of dbs;
         // since they use the same socket connection as the main db, there's no need to close them individually
-        for (let name of secondaryDbs){
+        for (let name of dbNames){
           this[name] = db.db(name)
         }
 

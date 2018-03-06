@@ -4,7 +4,7 @@ Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql, 
 It uses the following drivers:  
 Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/2.2/)  
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
-Postgresql: [pg-promise](https://github.com/vitaly-t/pg-promise)
+Postgresql: [pg-promise](https://github.com/vitaly-t/pg-promise)  
 Redis: [promise-redis](https://github.com/maxbrieiev/promise-redis)
 
 This package only handles connection & disconnect. Please refer to each driver's own documentation for how to query the DBs.
@@ -41,7 +41,8 @@ Type: Array of objects. Mandatory, no default.
 Lists the databases to connect to. Each element is an object with the following properties:  
 *connectionString* `string`: the connection string to connect to the DB.  
 *name* `string` or `Array of string`: Name the database will be referenced after. If not provided for Mongo, the database is referenced after the db name provided in the connection string.  
-For Mongo DBs, the property can be an array of strings. The first value will reference the main db (the one  in the connection string). The other values must be the names of other databases the connection string gives access to.
+For Mongo DBs, the property can be an array of strings. The first value will reference the main db (the one  in the connection string). The other values must be the names of other databases the connection string gives access to.  
+If you need to alias a DB, use the `dbName:alias` syntax, where dbName is the real name of the database, and alias is the name you want to use.
 
 Examples:
 
@@ -70,6 +71,7 @@ Examples:
       connectionString: 'redis://192.168.6.9:6379'
     }
 
+`{name: 'wtb:source', connectionString:...}` allows you to use *`db.source`* to query the *wtb* database.
 
 **options**  
 Type: object

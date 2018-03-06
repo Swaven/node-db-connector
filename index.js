@@ -129,13 +129,30 @@ class DbConnector {
         else
           return reject(new VError('Name must be a string or an aray of string'))
 
+        // computes a reference name for the main connection to the db
+        var refName = db.databaseName + ':' + dbNames.map(x => {
+          let s = x.split(':')
+          return s[1] || s[0]
+        }).join(', ')
+
+        if (this[refName])
+          return reject(new VError('Cannot reference multiple DBs with name %s', refName))
+
         // reference connected db name by adding it as class property
-        this._mongoDbNames.push(db.databaseName)
+        this._mongoDbNames.push(refName)
+        this[refName] = db
 
         // reference all dbs. But their names are not added to list of dbs;
         // since they use the same socket connection as the main db, there's no need to close them individually
         for (let name of dbNames){
-          this[name] = db.db(name)
+          let alias
+          [name, alias] = name.split(':')
+          alias = alias || name
+
+          if (this[alias])
+            throw new VError('Cannot have multiple connections to alias %s', alias)
+
+          this[alias] = db.db(name)
         }
 
         this._logger.info(`Mongo/${logName} connection ok`)
@@ -237,15 +254,15 @@ class DbConnector {
 
   //  close all native mongos connections
   _closeMongos(){
-    this._mongoDbNames.forEach((dbName)=>{
-      if (this[dbName] == null)
+    this._mongoDbNames.forEach((refName)=>{
+      if (this[refName] == null)
         return
 
-      this._closePromises.push(this[dbName].close().then(()=>{
-        self._logger.info(`Mongo/${dbName} connection closed`)
+      this._closePromises.push(this[refName].close().then(()=>{
+        self._logger.info(`Mongo/${refName} connection closed`)
       })
       .catch(()=>{
-        self._logger.info.log(`Mongo/${dbName} connection close error`)
+        self._logger.info.log(`Mongo/${refName} connection close error`)
         return Promise.resolve() // resolve anyway
       }))
     })

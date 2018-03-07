@@ -93,7 +93,7 @@ Available options:
 
 Closes all connections.
 
-### Example
+## Example
 
 ````javascript
     var db = require('node-db-connector'),
@@ -118,3 +118,7 @@ Closes all connections.
       console.error('Something horrible happened: ' + err)
     })
 ````
+
+## Tests
+
+`npm test` or `mocha tests` to run all tests. For them to run, you need a mongodb instance on *`localhost:27017`* (no authentication). The instance must contain a DB named *`wtb`* which itself must have a non-empty collection *`coin`*.

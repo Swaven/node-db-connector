@@ -73,3 +73,18 @@ describe('Multiple', () => {
     await sut.close()
   })
 })
+
+describe('Slash separator', () => {
+  clearCache()
+  let sut = require('../index.js')
+  it('connect', async () => {
+    await sut.init([{name: 'wtb/foo', connectionString: connStrings.local}], {separator: '/'})
+
+    let docs = await sut.foo.collection('coin').find().toArray()
+    assert.isAbove(docs.length, 0)
+  })
+
+  it('close', async () => {
+    await sut.close()
+  })
+})

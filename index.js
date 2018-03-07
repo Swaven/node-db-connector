@@ -23,6 +23,8 @@ class DbConnector {
     this._redisDbNames = []
     this._logger = this._options.logger || console
 
+    this._options.separator = this._options.separator || ':'
+
     // find mongoose connection
     var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
     if (mongooseIdx >= 0){
@@ -146,7 +148,7 @@ class DbConnector {
         // since they use the same socket connection as the main db, there's no need to close them individually
         for (let name of dbNames){
           let alias
-          [name, alias] = name.split(':')
+          [name, alias] = name.split(this._options.separator)
           alias = alias || name
 
           if (this[alias])

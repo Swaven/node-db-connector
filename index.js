@@ -7,6 +7,7 @@ class DbConnector {
     this._options = null
     this._mongooseDbName = null
     this._mongoDbNames = null
+    this._mongoAliases = null // list of aliases (for wich there is a top-level property of the same name that references DB object)
     this._pgDbNames = null
     this._mysqlDbNames = null
     this._redisDbNames = null
@@ -18,6 +19,7 @@ class DbConnector {
     this._options = options || {}
     this._connPromises = []
     this._mongoDbNames = []
+    this._mongoAliases = []
     this._pgDbNames = []
     this._mysqlDbNames = []
     this._redisDbNames = []
@@ -155,6 +157,7 @@ class DbConnector {
             throw new VError('Cannot have multiple connections to alias %s', alias)
 
           this[alias] = db.db(name)
+          this._mongoAliases.push(alias)
         }
 
         this._logger.info(`Mongo/${logName} connection ok`)
@@ -256,15 +259,21 @@ class DbConnector {
 
   //  close all native mongos connections
   _closeMongos(){
+    this._mongoAliases.forEach(alias => {
+      delete this[alias]
+    })
+
     this._mongoDbNames.forEach((refName)=>{
       if (this[refName] == null)
         return
 
       this._closePromises.push(this[refName].close().then(()=>{
         self._logger.info(`Mongo/${refName} connection closed`)
+        delete this[refName]
       })
       .catch(()=>{
         self._logger.info.log(`Mongo/${refName} connection close error`)
+        delete this[refName]
         return Promise.resolve() // resolve anyway
       }))
     })

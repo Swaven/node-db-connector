@@ -91,7 +91,7 @@ class DbConnector {
       throw new VError('Mongoose object must be provided')
 
     this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
-    this._options.mongoose.connect(config.connectionString, { mongos: config.multi || false })
+    this._options.mongoose.connect(config.connectionString, { useMongoClient: true })
     var mongoosedb = this._options.mongoose.connection
     this._mongooseDbName = config.name
     this._connPromises.push(new Promise((resolve, reject) => {

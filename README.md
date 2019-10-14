@@ -138,10 +138,26 @@ npm link node-db-connector
 See https://docs.npmjs.com/cli/link for more details.
 
 To remove the development-version link:
+
 ````shell
 # in project file
 npm unlink node-db-connector
 
 # in node-db-connector folder
 npm unlink
+````
+
+## Publishing
+
+- update the package version number in package.json. It uses semantic versionning. Semantic versionning uses 3 numbers to represent a version, e.g. `2.0.1`:
+  - Major: increment when the new version contains **breaking changes**.
+  - Minor: increment when the new version adds backward-compatible changes.
+  - Patch: increment when the new version makes backward-compatible bugfixes.
+
+Incrementing a number means resetting following number to 0, e.g. `2.1.7` -> `3.0.0`, or `2.0.5` -> `2.1.0`.
+
+More details at https://semver.org/
+
+````shell
+npm publish
 ````

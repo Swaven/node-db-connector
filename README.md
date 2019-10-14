@@ -154,10 +154,9 @@ npm unlink
   - Minor: increment when the new version adds backward-compatible changes.
   - Patch: increment when the new version makes backward-compatible bugfixes.
 
-Incrementing a number means resetting following number to 0, e.g. `2.1.7` -> `3.0.0`, or `2.0.5` -> `2.1.0`.
+Incrementing a number means resetting following number to 0, e.g. `2.1.7` -> `3.0.0`, or `2.0.5` -> `2.1.0`. More details at https://semver.org/
 
-More details at https://semver.org/
-
+- Then publish the package:
 ````shell
 npm publish
 ````

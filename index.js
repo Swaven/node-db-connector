@@ -185,7 +185,7 @@ class DbConnector {
   }
 
   _connectMysql(config, mysql){
-    var mySqlPool = this._createMysqlPool(config.connectionString, mysql)
+    var mySqlPool = mysql.createPool(config.connectionString)
     if (!mySqlPool)
       return this._connPromises.push(Promise.reject(new VError(`Invalid MySql/${config.name} connection string`)))
 
@@ -200,22 +200,6 @@ class DbConnector {
         resolve()
       })
     }))
-  }
-
-  _createMysqlPool(connectionString, mysql){
-    let regEx = /^mysql:\/\/(.+):(.+)@(.+?)(:(\d+))?\/(.+)$/,
-        connDetails = connectionString.match(regEx)
-
-    if (!connDetails)
-      return
-
-    return mysql.createPool({
-      user     : connDetails[1],
-      password : connDetails[2],
-      host     : connDetails[3],
-      port     : connDetails[5],
-      database : connDetails[6]
-    })
   }
 
   // connect to Redis

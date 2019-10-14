@@ -122,3 +122,26 @@ Closes all connections.
 ## Tests
 
 `npm test` or `mocha tests` to run all tests. For them to run, you need a mongodb instance on *`localhost:27017`* (no authentication). The instance must contain a DB named *`wtb`* which itself must have a non-empty collection *`coin`*.
+
+## Development setup
+
+To run a development version of an npm module, you need to link it:
+
+````shell
+cd ../node-db-connector # go to the repository directory
+npm link
+
+cd .../dev/wtb-backoffice # go to the repository that needs the development version
+npm link node-db-connector
+````
+
+See https://docs.npmjs.com/cli/link for more details.
+
+To remove the development-version link:
+````shell
+# in project file
+npm unlink node-db-connector
+
+# in node-db-connector folder
+npm unlink
+````

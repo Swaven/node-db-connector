@@ -11,10 +11,8 @@ class DbConnector {
     // list of mongo db names/aliases
     // for each  there is a top-level property with that name that references the DB object
     this._mongoDbNames = null
-    this._pgDbNames = null
     this._mysqlDbNames = null
     this._redisDbNames = null
-    this._pgPromise = null // pg-promise library instance
     this._logger = null
   }
 
@@ -23,7 +21,6 @@ class DbConnector {
     this._connPromises = []
     this._mongoClients = []
     this._mongoDbNames = []
-    this._pgDbNames = []
     this._mysqlDbNames = []
     this._redisDbNames = []
     this._logger = this._options.logger || console
@@ -52,15 +49,6 @@ class DbConnector {
       let mysql = require('promise-mysql')
       for (let cfg of mysqlConfigs){
         this._connectMysql(cfg, mysql)
-      }
-    }
-
-    // find postgresql configs
-    var pgConfigs = configs.filter((x) => {return x.connectionString.startsWith('postgresql://')})
-    if (pgConfigs.length > 0){
-      this._pgPromise = require('pg-promise')()
-      for (let cfg of pgConfigs){
-        this._connectPostgresql(cfg)
       }
     }
 
@@ -169,24 +157,6 @@ class DbConnector {
     }))
   }
 
-  // opens a postgreql connection
-  _connectPostgresql(config){
-    // Db[cfg.name] = pgp(cfg.connectionString)
-    this._connPromises.push(new Promise((resolve, reject) => {
-      let db = this._pgPromise(config.connectionString)
-      db.connect().then((obj) => {
-        this[config.name] = db
-        this._pgDbNames.push(config.name)
-        this._logger.info(`PostgreSql/${config.name} connection OK`)
-        obj.done()
-        resolve()
-      })
-      .catch((err) => {
-        reject(new VError(err, `PostgreSql/${config.name} connection error`))
-      })
-    }))
-  }
-
   _connectMysql(config, mysql){
     var mySqlPool = mysql.createPool(config.connectionString)
     if (!mySqlPool)
@@ -264,15 +234,6 @@ class DbConnector {
     this._mongoClients = null
   }
 
-  // closes postgresql connections
-  _closePostgresql(){
-    if (this._pgDbNames.length > 0){
-      this._pgPromise.end()
-      for (let name of this._pgDbNames)
-        this._logger.info(`Postgresql/${name} connection closed`)
-    }
-    return Promise.resolve()
-  }
 
   // closes all mysql connections
   _closeMysql(){

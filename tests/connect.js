@@ -3,35 +3,63 @@
 const chai = require('chai'),
       assert = chai.assert
 
-
 const connStrings = {
-  local: 'mongodb://localhost:27017/wtb'
+  stg_admin: 'mongodb://stg_admin:PWD@stg.mongodb.internal.swaven.com:27017'
+, stg_admin_wrong_db: 'mongodb://stg_admin:PWD@stg.mongodb.internal.swaven.com:27017/wtb'
+, stg_local: 'mongodb://user_tagmanager:PWD@stg.mongodb.internal.swaven.com:27017/wtb'
+, stg_local_wrong_db: 'mongodb://user_tagmanager:PWD@stg.mongodb.internal.swaven.com:27017'
+}
+
+// Fail if connection strings contain placeholder values instead of actual credentials
+const invalid = Object.values(connStrings).some(x => x.includes('PWD@'))
+if (invalid){
+  console.error('Invalid connection strings')
+  return
 }
 
 const samples = [
   {
-    test: 'Single, no name',
-    cfg : {connectionString: connStrings.local},
+    test: 'Single, no name, local',
+    cfg : {connectionString: connStrings.stg_local},
     db: 'wtb'
   },
   {
-    test: 'Single, named same',
-    cfg: {name: 'wtb', connectionString: connStrings.local},
+    test: 'Single, named, admin',
+    cfg : {name: 'wtb', connectionString: connStrings.stg_admin},
     db: 'wtb'
   },
   {
-    test: 'Single, multiple names',
-    cfg: {name: ['wtb', 'foo'], connectionString: connStrings.local},
+    test: 'Single, named same, local',
+    cfg: {name: 'wtb', connectionString: connStrings.stg_local},
     db: 'wtb'
   },
   {
-    test: 'Single, named diff',
-    cfg: {name: 'wtb:foo', connectionString: connStrings.local},
+    test: 'Single, aliased, local',
+    cfg: {name: 'wtb:coin', connectionString: connStrings.stg_local},
+    db: 'coin'
+  },
+  {
+    test: 'Single, aliased, admin',
+    cfg: {name: 'wtb:coin', connectionString: connStrings.stg_admin},
+    db: 'coin'
+  },
+  {
+    test: 'Multiple names, local',
+    cfg: {name: ['wtb', 'catalog'], connectionString: connStrings.stg_local},
+    db: 'wtb'
+  },
+  {
+    test: 'Multiple names, admin',
+    cfg: {name: ['wtb', 'catalog'], connectionString: connStrings.stg_admin},
+    db: 'wtb'
+  },
+  {
+    test: 'Multiple, named diff',
+    cfg: {name: ['wtb:foo', 'affiliate'], connectionString: connStrings.stg_local},
     db: 'foo'
   }
 ]
 
-debugger
 
 function clearCache(){
   Object.keys(require.cache).forEach(key => delete require.cache[key])
@@ -45,7 +73,7 @@ samples.forEach(sample => {
     it('connect', async () => {
       await sut.init([sample.cfg])
 
-      let docs = await sut[sample.db].collection('coin').find().toArray()
+      let docs = await sut[sample.db].collection('widget_confs').find().limit(5).toArray()
       assert.isAbove(docs.length, 0)
     })
 
@@ -55,17 +83,50 @@ samples.forEach(sample => {
   })
 })
 
-describe('Multiple', () => {
+// use another db than the one in auth
+describe('Single, other DB, local', () => {
+  clearCache()
+  let sut = require('../index.js')
+  it('connect', async () => {
+    await sut.init([{name: 'affiliate', connectionString: connStrings.stg_local}])
+
+    let docs = await sut.affiliate.collection('collect_tasks').find().limit(10).toArray()
+    assert.isAbove(docs.length, 0)
+  })
+
+  it('close', async () => {
+    await sut.close()
+  })
+})
+
+describe('Single, no name', () => {
+  clearCache()
+  let sut = require('../index.js')
+  it('connect', async () => {
+    let error = null
+    try{
+      await sut.init([{
+        connectionString: connStrings.stg_nodefault
+      }])
+    }
+    catch(ex){
+      error = ex
+    }
+    assert.isNotNull(error)
+  })
+})
+
+describe('Multiple aliased, local', () => {
   clearCache()
   let sut = require('../index.js')
   it('connect', async () => {
     await sut.init([{
-      name: 'wtb:foo', connectionString: connStrings.local
+      name: 'wtb:foo', connectionString: connStrings.stg_local
     }, {
-      name: 'wtb:bar', connectionString: connStrings.local
+      name: 'wtb:bar', connectionString: connStrings.stg_admin
     }])
 
-    let docs = await sut.foo.collection('coin').find().toArray()
+    let docs = await sut.foo.collection('widget_confs').find().limit(5).toArray()
     assert.isAbove(docs.length, 0)
     console.log(`${docs.length} docs`)
   })
@@ -78,13 +139,29 @@ describe('Slash separator', () => {
   clearCache()
   let sut = require('../index.js')
   it('connect', async () => {
-    await sut.init([{name: 'wtb/foo', connectionString: connStrings.local}], {separator: '/'})
+    await sut.init([{name: 'wtb/foo', connectionString: connStrings.stg_admin}], {separator: '/'})
 
-    let docs = await sut.foo.collection('coin').find().toArray()
+    let docs = await sut.foo.collection('widget_confs').find().limit(5).toArray()
     assert.isAbove(docs.length, 0)
   })
 
   it('close', async () => {
     await sut.close()
+  })
+})
+
+describe('chained inits', () => {
+  const sut = require('../index.js')
+  it('reinit', () => {
+    return sut.init([{connectionString: connStrings.stg_local}])
+    .then(() => {
+      return sut.close()
+    })
+    .then(() => {
+      return sut.init([{connectionString: connStrings.stg_local}])
+    })
+    .then(() => {
+      return sut.close()
+    })
   })
 })

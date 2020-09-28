@@ -6,8 +6,11 @@ class DbConnector {
   constructor(){
     this._options = null
     this._mongooseDbName = null
+    this._mongoClients = null
+
+    // list of mongo db names/aliases
+    // for each  there is a top-level property with that name that references the DB object
     this._mongoDbNames = null
-    this._mongoAliases = null // list of aliases (for wich there is a top-level property of the same name that references DB object)
     this._pgDbNames = null
     this._mysqlDbNames = null
     this._redisDbNames = null
@@ -18,8 +21,8 @@ class DbConnector {
   init(configs, options){
     this._options = options || {}
     this._connPromises = []
+    this._mongoClients = []
     this._mongoDbNames = []
-    this._mongoAliases = []
     this._pgDbNames = []
     this._mysqlDbNames = []
     this._redisDbNames = []
@@ -117,15 +120,19 @@ class DbConnector {
   // connecto to Mongo using native driver
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise((resolve, reject) => {
-      mongoclient.connect(config.connectionString, (err, db)=>{
-        let logName = (config.name || db.databaseName).toString() // name to show in logs
+      const url = new URL(config.connectionString)
+      if ((!url.pathname || url.pathname === '/') && !config.name)
+        return reject('No DB name in connection string or config')
+
+      mongoclient.connect(config.connectionString, {useUnifiedTopology: true}, (err, client) => {
+        let clientName = (config.name || url.pathname.substring(1)).toString() // name of the mongo client for the connection
         if (err != null)
-          return reject(new VError(err, `Mongo/${logName} connection error`))
+          return reject(new VError(err, `Mongo/${clientName} connection error`))
 
         // names of database to reference
         let dbNames
         if (!config.name)
-          dbNames = [db.databaseName]
+          dbNames = [url.pathname.substring(1)] // when no name is provided, use auth db
         else if (typeof config.name === 'string')
           dbNames = [config.name]
         else if (Array.isArray(config.name))
@@ -133,21 +140,17 @@ class DbConnector {
         else
           return reject(new VError('Name must be a string or an aray of string'))
 
-        // computes a reference name for the main connection to the db
-        var refName = db.databaseName + ':' + dbNames.map(x => {
-          let s = x.split(':')
-          return s[1] || s[0]
-        }).join(', ')
+        if (this[clientName])
+          return reject(new VError('Cannot reference multiple clients with name %s', clientName))
 
-        if (this[refName])
-          return reject(new VError('Cannot reference multiple DBs with name %s', refName))
+        // keep ref of reference connected client
+        this._mongoClients.push({
+          name: clientName, // for log/display purpose only
+          client: client
+        })
 
-        // reference connected db name by adding it as class property
-        this._mongoDbNames.push(refName)
-        this[refName] = db
-
-        // reference all dbs. But their names are not added to list of dbs;
-        // since they use the same socket connection as the main db, there's no need to close them individually
+        // reference all dbs.
+        // They all use the same client/socket connection.
         for (let name of dbNames){
           let alias
           [name, alias] = name.split(this._options.separator)
@@ -156,11 +159,11 @@ class DbConnector {
           if (this[alias])
             throw new VError('Cannot have multiple connections to alias %s', alias)
 
-          this[alias] = db.db(name)
-          this._mongoAliases.push(alias)
+          this[alias] = client.db(name)
+          this._mongoDbNames.push(alias)
         }
 
-        this._logger.info(`Mongo/${logName} connection ok`)
+        this._logger.info(`Mongo/${clientName} connection ok`)
         resolve()
       })
     }))
@@ -243,24 +246,22 @@ class DbConnector {
 
   //  close all native mongos connections
   _closeMongos(){
-    this._mongoAliases.forEach(alias => {
+    this._mongoDbNames.forEach(alias => {
       delete this[alias]
     })
+    this._mongoDbNames = null
 
-    this._mongoDbNames.forEach((refName)=>{
-      if (this[refName] == null)
-        return
-
-      this._closePromises.push(this[refName].close().then(()=>{
-        self._logger.info(`Mongo/${refName} connection closed`)
-        delete this[refName]
+    this._mongoClients.forEach((client) => {
+      this._closePromises.push(client.client.close().then(() => {
+        self._logger.info(`Mongo/${client.name} connection closed`)
       })
-      .catch(()=>{
-        self._logger.info.log(`Mongo/${refName} connection close error`)
-        delete this[refName]
+      .catch(() => {
+        self._logger.info.log(`Mongo/${client.name} connection close error`)
         return Promise.resolve() // resolve anyway
       }))
     })
+
+    this._mongoClients = null
   }
 
   // closes postgresql connections

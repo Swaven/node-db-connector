@@ -1,29 +1,31 @@
 # node-db-connector
-Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql, Postgresql and Redis databases.
+Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql and Redis databases.
 
 It uses the following drivers:  
-Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/2.2/)  
+Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/3.6/)  
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
-Postgresql: [pg-promise](https://github.com/vitaly-t/pg-promise)  
-Redis: [promise-redis](https://github.com/maxbrieiev/promise-redis)
+Redis: [promise-redis](https://github.com/maxbrieiev/promise-redis)  
+**PostgreSQL support was removed in version 3.0.0 as we do not use it anymore.**
 
 This package only handles connection & disconnect. Please refer to each driver's own documentation for how to query the DBs.
+
 
 ## Usage
 
 ````javascript
     var db = require('node-db-connector')
-    db.init(configs, {})
-    .then(() => {
+
+    try{      
+      await db.init(configs, {})
       console.log('DBs connections OK')
-      return db.close()
-    })
-    .then(() => {
+
+      await db.close()
       console.log('All DBs closed')
-    })
-    .catch((err) => {
+
+    }
+    catch(err){
       console.error('Something horrible happened: ' + err)
-    })
+    }
 ````
 
 ## API
@@ -59,10 +61,6 @@ Examples:
       connectionString: 'mongodb://user:pwd@192.168.6.9:27017/wtb'
     },
     {
-      name: 'b2b_data',
-      connectionString: 'postgresql://user:pwd@192.168.6.9:1024/b2bdata'
-    },
-    {
       name: 'cms',
       connectionString: 'mysql://user:pwd@192.168.6.9:3306/prd_cms'
     },
@@ -84,9 +82,9 @@ Allows you to use *`db.source`* to query the *`wtb`* database.
 Type: object
 
 Available options:  
-*mongoose* `object`: the mongoose instance. Mandatory if Mongoose is used for a connection.  
-*logger* `object`: a logger object. Must provide `info` and `error` methods. Default to `console`.  
-*separator* `string`: separator to specify an alias for db name. Default ':'
+- *mongoose* `object`: the mongoose instance. Mandatory if Mongoose is used for a connection.
+- *logger* `object`: a logger object. Must provide `info` and `error` methods. Default to `console`.
+- *separator* `string`: separator to specify an alias for db name. Default `':'`
 
 
 #### `close()`
@@ -96,73 +94,27 @@ Closes all connections.
 ## Example
 
 ````javascript
-    var db = require('node-db-connector'),
-        configs = [{
-          name: ['wtb', 'catalog'],
-          connectionString: 'mongodb://user:pwd@192.168.6.9:27017/wtb'
-        }]
-    db.init(configs, {})
-    .then(() => {
+    const db = require('node-db-connector'),
+          configs = [{
+            name: ['wtb', 'catalog'],
+            connectionString: 'mongodb://user:pwd@192.168.6.9:27017/wtb'
+          }]
+
+    try{      
+      await db.init(configs, {})    
       console.log('DBs connections OK')
-      return db.wtb.collection('users').find().toArray()
-    .then((users)=>{
-      return db.catalog.collection('products').findOne({_id: 42})
-    })
-    .then((doc)=>{
-      return db.close()
-    })
-    .then(() => {
+
+      const users = await db.wtb.collection('users').find().toArray()    
+      const products = await db.catalog.collection('products').findOne({_id: 42})    
+
+      await db.close()
       console.log('All DBs closed')
-    })
-    .catch((err) => {
-      console.error('Something horrible happened: ' + err)
-    })
+    }
+    catch(err){
+      console.error('Aargh :(\n' + err)
+    }
 ````
 
 ## Tests
 
-`npm test` or `mocha tests` to run all tests. For them to run, you need a mongodb instance on *`localhost:27017`* (no authentication). The instance must contain a DB named *`wtb`* which itself must have a non-empty collection *`coin`*.
-
-## Development setup
-
-To run a development version of an npm module, you need to link it:
-
-````shell
-cd ../node-db-connector # go to the repository directory
-npm link
-
-cd .../dev/wtb-backoffice # go to the repository that needs the development version
-npm link node-db-connector
-````
-
-See https://docs.npmjs.com/cli/link for more details.
-
-To remove the development-version link:
-
-````shell
-# in project file
-npm unlink node-db-connector
-
-# in node-db-connector folder
-npm unlink
-````
-
-## Publishing
-
-- update the package version number in `package.json`. It uses semantic versionning. Semantic versionning uses 3 numbers to represent a version, e.g. `2.0.1`:
-  - Major: increment when the new version contains **breaking changes**.
-  - Minor: increment when the new version adds backward-compatible changes.
-  - Patch: increment when the new version makes backward-compatible bugfixes.
-
-Incrementing a number means resetting subsequent numbers to 0, e.g. `2.1.7` -> `3.0.0`, or `2.0.5` -> `2.1.0`. More details at https://semver.org/
-
-- Make sure you are authenticated:
-````shell
-npm login
-````
-Then enter swaven login & credentials.
-
-- Publish the package:
-````shell
-npm publish
-````
+`npm test` or `mocha tests` to run all tests. You will need to edit the connection strings in `tests` folder to use an actual DB.

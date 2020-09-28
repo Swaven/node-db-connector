@@ -1,14 +1,11 @@
 'use strict'
 
 const chai = require('chai'),
-      assert = chai.assert
+      assert = chai.assert,
+      { readFileSync } = require('fs')
 
-const connStrings = {
-  stg_admin: 'mongodb://stg_admin:PWD@stg.mongodb.internal.swaven.com:27017'
-, stg_admin_wrong_db: 'mongodb://stg_admin:PWD@stg.mongodb.internal.swaven.com:27017/wtb'
-, stg_local: 'mongodb://user_tagmanager:PWD@stg.mongodb.internal.swaven.com:27017/wtb'
-, stg_local_wrong_db: 'mongodb://user_tagmanager:PWD@stg.mongodb.internal.swaven.com:27017'
-}
+
+const connStrings = JSON.parse(readFileSync('tests/connectionStrings.json'))
 
 // Fail if connection strings contain placeholder values instead of actual credentials
 const invalid = Object.values(connStrings).some(x => x.includes('PWD@'))

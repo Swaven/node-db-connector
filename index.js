@@ -67,8 +67,7 @@ class DbConnector {
   // close all connections
   close(){
     this._closePromises = [
-      this._closeMongoose(),
-      this._closePostgresql()
+      this._closeMongoose()
     ]
     this._closeMongos()
     this._closeMysql()

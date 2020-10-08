@@ -104,22 +104,48 @@ class DbConnector {
     }))
   }
 
+  // parse a mongodb connection string and returns an object with its elements.
+  // Returns null if url is invalid (i.e. does not match the regex)
+  static _parseMongoString(url){
+    const rx = /^mongodb:\/\/(?:(?<user>.+):(?<pwd>.+)@)?(?<host>[^\/]+?)(?<name>\/.+?)?(?<opts>\?.+)?$/
+    const match = url.match(rx)
+
+    if (!match)
+      return null
+
+    let name
+
+    if (match.groups.name)
+      name = match.groups.name.substring(1)
+
+      return {
+        origin: 'mongodb://',
+        username: match.groups.user,
+        password: match.groups.pwd,
+        host: match.groups.host, // multiple hosts accepted, returned as a plain string
+        name: name, // authentication db
+
+        // options not needed for now, don't need to return them
+      }
+  }
+
   // connecto to Mongo using native driver
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise((resolve, reject) => {
-      const url = new URL(config.connectionString)
-      if ((!url.pathname || url.pathname === '/') && !config.name)
+      const url = DbConnector._parseMongoString(config.connectionString)
+
+      if (!url.name && !config.name)
         return reject('No DB name in connection string or config')
 
       mongoclient.connect(config.connectionString, {useUnifiedTopology: true}, (err, client) => {
-        let clientName = (config.name || url.pathname.substring(1)).toString() // name of the mongo client for the connection
+        let clientName = (config.name || url.name).toString() // name of the mongo client for the connection
         if (err != null)
           return reject(new VError(err, `Mongo/${clientName} connection error`))
 
         // names of database to reference
         let dbNames
         if (!config.name)
-          dbNames = [url.pathname.substring(1)] // when no name is provided, use auth db
+          dbNames = [url.name] // when no name is provided, use auth db
         else if (typeof config.name === 'string')
           dbNames = [config.name]
         else if (Array.isArray(config.name))

@@ -55,7 +55,7 @@ class DbConnector {
     // find redis configs
     var redisConfigs = configs.filter((x) => {return x.connectionString.startsWith('redis://')})
     if (redisConfigs.length > 0){
-      let redis = require('promise-redis')()
+      let redis = require('redis')
       for (let cfg of redisConfigs){
         this._connectRedis(cfg, redis)
       }
@@ -202,24 +202,23 @@ class DbConnector {
 
   // connect to Redis
   _connectRedis(config, redis){
-    this._connPromises.push(new Promise((resolve, reject) => {
-      var connected, client = redis.createClient(config.connectionString)
-      // Open connection is not promisify, use event handlers instead
-      client.on("ready", () => {
-        // reference db instance by adding it as class property
-        this[config.name] = client
-        this._redisDbNames.push(config.name)
-        this._logger.info(`Redis/${config.name} connection OK`)
-        connected = true
-        resolve()
-      })
+    this._connPromises.push(new Promise(async (resolve, reject) => {
+      var connected, client = redis.createClient({url: config.connectionString})
+     
       // client will emit error when encountering an error connecting to the Redis server
       // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet
-      client.on("error", (err) => {
+      client.on("error", err => {
         this._logger.error(new VError(err, `Redis/${config.name}: an error occured`))
         if (!connected)
           reject(new VError(err, `Redis/${config.name} connection error`))
       })
+
+      await client.connect()
+      this[config.name] = client
+      this._redisDbNames.push(config.name)
+      this._logger.info(`Redis/${config.name} connection OK`)
+      connected = true
+      resolve()
     }))
   }
 
@@ -278,12 +277,9 @@ class DbConnector {
     this._redisDbNames.forEach((dbName)=>{
       if (this[dbName] == null)
         return
-      this._closePromises.push(new Promise((resolve, reject) => {
-        // Close connection is not promisify, use event handlers instead
-        this[dbName].on("end", () => {
-          self._logger.info(`Redis/${dbName} connection closed`)
-        })
-        this[dbName].quit()
+      this._closePromises.push(new Promise(async (resolve, reject) => {
+        await this[dbName].quit()
+        self._logger.info(`Redis/${dbName} connection closed`)
         resolve() // resolve anyway, but end event may not be logged
       }))
     })

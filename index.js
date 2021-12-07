@@ -203,8 +203,9 @@ class DbConnector {
 
   // connect to Redis
   _connectRedis(config, redis){
-    this._connPromises.push(new Promise(async (resolve, reject) => {
-      var connected, client = redis.createClient({url: config.connectionString})
+    this._connPromises.push(new Promise((resolve, reject) => {
+      let connected = false
+      const client = redis.createClient({url: config.connectionString})
      
       // client will emit error when encountering an error connecting to the Redis server
       // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet
@@ -214,7 +215,6 @@ class DbConnector {
           reject(new VError(err, `Redis/${config.name} connection error`))
       })
 
-      await client.connect()
       this[config.name] = client
       this._redisDbNames.push(config.name)
       this._logger.info(`Redis/${config.name} connection OK`)

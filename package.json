@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
   "dependencies": {
-    "aws-sdk": "^2.1341.0",
+    "@aws-sdk/client-secrets-manager": "^3.297.0",
     "mongodb": "^4.2.1",
     "promise-mysql": "^3.3.2",
     "promise-redis-legacy": "^1.0.0",

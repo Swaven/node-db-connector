@@ -1,27 +1,26 @@
-const AWS = require('aws-sdk')
+'use strict'
+const {SecretsManager, GetSecretValueCommand} = require('@aws-sdk/client-secrets-manager')
+const VError = require('verror')
+
 
 let client
 function init(){
   if (client)
     return
-  client = new AWS.SecretsManager()
+  client = new SecretsManager()
 }
 
 module.exports = exports = {
-  getSecret: function(secretId){
-    return new Promise((resolve, reject) => {
+  getSecret: async function(secretId){
+    try{
       init()
-      client.getSecretValue({ SecretId: secretId }, (err, data) => {
-        if (err)
-          return reject(err)
-
-        try{
-          resolve(JSON.parse(data.SecretString))
-        }
-        catch(ex){
-          resolve(data.SecretString)
-        }
-      })
-    })
+      const data = await client.send(new GetSecretValueCommand({SecretId: secretId} ))
+      return JSON.parse(data.SecretString)
+    }
+    catch(ex){
+      if (ex instanceof SyntaxError)
+        return data.SecretString
+      throw new Verror(ex, `Error retrieving secret '${secretId}'`)
+    }
   }
 }

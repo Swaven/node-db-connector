@@ -1,5 +1,6 @@
 'use strict'
 
+const secretMgr = require('./aws-secrets.js')
 var VError = require('verror')
 
 class DbConnector {
@@ -132,13 +133,35 @@ class DbConnector {
 
   // connecto to Mongo using native driver
   _connectMongo(config, mongoclient){
-    this._connPromises.push(new Promise((resolve, reject) => {
+    this._connPromises.push(new Promise(async (resolve, reject) => {
       const url = DbConnector._parseMongoString(config.connectionString)
+
+      let connString = config.connectionString 
+      let secret
+      if (config.secret){
+        try{
+          secret = await secretMgr.getSecret(config.secret)
+          if (typeof secret === 'object'){
+            url.username = secret.username
+            url.password = secret.password
+            if (secret.authdb)
+              url.name = secret.authdb
+
+            connString = config.connectionString.replace('username', secret.username)
+              .replace('password', secret.password)
+              .replace('authdb', secret.authdb)
+            
+          }
+        }
+        catch(ex){
+          reject(ex)
+        }
+      }
 
       if (!url.name && !config.name)
         return reject('No DB name in connection string or config')
 
-      mongoclient.connect(config.connectionString, {useUnifiedTopology: true}, (err, client) => {
+      mongoclient.connect(connString, {useUnifiedTopology: true}, (err, client) => {
         let clientName = (config.name || url.name).toString() // name of the mongo client for the connection
         if (err != null)
           return reject(new VError(err, `Mongo/${clientName} connection error`))

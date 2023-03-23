@@ -54,6 +54,15 @@ const samples = [
     test: 'Multiple, named diff',
     cfg: {name: ['wtb:foo', 'affiliate'], connectionString: connStrings.stg_local},
     db: 'foo'
+  },
+  {
+    test: 'Secret',
+    cfg: {
+      connectionString: 'mongodb://username:password@stg.mongodb.internal.swaven.com:29800/authdb',
+      secret: 'stg-mongo-awe-2',
+      name: 'wtb'
+    },
+    db: 'wtb'
   }
 ]
 
@@ -85,7 +94,7 @@ describe('Single, other DB, local', () => {
   clearCache()
   let sut = require('../index.js')
   it('connect', async () => {
-    await sut.init([{name: 'affiliate', connectionString: connStrings.stg_local}])
+    await sut.init([{name: 'affiliate', connectionString: connStrings.stg_admin}])
 
     let docs = await sut.affiliate.collection('collect_tasks').find().limit(10).toArray()
     assert.isAbove(docs.length, 0)

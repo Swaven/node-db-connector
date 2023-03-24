@@ -29,6 +29,13 @@ const samples = [
       connectionString: 'mysql://username:password@stg-prddata.c2e9dnivo2g9.eu-west-1.rds.amazonaws.com:9760/authdb',
       secret:'stg-mysql-dp'
     }
+  }, {
+    test:'w/ secret 2 no auth',
+    cfg:{
+      name: 'stg_cms', 
+      connectionString: 'mysql://stg-prddata.c2e9dnivo2g9.eu-west-1.rds.amazonaws.com:9760',
+      secret:'stg-mysql-dp'
+    }
   }
 ]
 

@@ -63,6 +63,15 @@ const samples = [
       name: 'wtb'
     },
     db: 'wtb'
+  },
+  {
+    test: 'Secret no auth',
+    cfg: {
+      connectionString: 'mongodb://stg.mongodb.internal.swaven.com:29800',
+      secret: 'stg-mongo-awe-2',
+      name: 'wtb'
+    },
+    db: 'wtb'
   }
 ]
 

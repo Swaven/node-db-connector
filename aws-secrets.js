@@ -20,7 +20,7 @@ module.exports = exports = {
     catch(ex){
       if (ex instanceof SyntaxError)
         return data.SecretString
-      throw new Verror(ex, `Error retrieving secret '${secretId}'`)
+      throw new VError(ex, `Error retrieving secret '${secretId}'`)
     }
   }
 }

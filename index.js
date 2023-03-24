@@ -66,31 +66,25 @@ class DbConnector {
     return Promise.all(this._connPromises)
   }
 
-  async buildConnectionString(config, url){
-    let connString = config.connectionString
-    if (config.secret){
-      try{
-        const secret = await secretMgr.getSecret(config.secret)
-        if (typeof secret === 'object'){
-          if (url){
-            url.username = secret.username
-            url.password = secret.password
-            if (secret.authdb)
-              url.name = secret.authdb
-          }
-          connString = config.connectionString
-            .replace('username', secret.username)
-            .replace('password', secret.password)
-            .replace('authdb', secret.authdb)
-          return connString
-        }
+  // parses the connection string and and edits it if a secret is provided
+  async buildConnectionString(config){
+    const uri = new URL(config.connectionString)
+    if (!config.secret)
+      return uri
+
+    try{
+      const secret = await secretMgr.getSecret(config.secret)
+      if (typeof secret === 'object'){
+        uri.username = secret.username
+        uri.password = secret.password
+        if (secret.authdb)
+          uri.pathname = '/' + secret.authdb
       }
-      catch(ex){
-        throw new Error(ex)
-      }
+      return uri
     }
-    else
-      return connString
+    catch(ex){
+      throw new VError(ex, `error building connection URI`)
+    }
   }
 
   // close all connections
@@ -111,10 +105,10 @@ class DbConnector {
 
     this._connPromises.push(new Promise(async (resolve, reject) => {
 
-      const connString = await this.buildConnectionString(config, null)
+      const uri = await this.buildConnectionString(config)
       this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
       
-      this._options.mongoose.connect(connString, { useMongoClient: true })
+      this._options.mongoose.connect(uri.toString(), { useMongoClient: true })
       var mongoosedb = this._options.mongoose.connection
       this._mongooseDbName = config.name
 
@@ -136,49 +130,24 @@ class DbConnector {
     }))
   }
 
-  // parse a mongodb connection string and returns an object with its elements.
-  // Returns null if url is invalid (i.e. does not match the regex)
-  static _parseMongoString(url){
-    const rx = /^mongodb:\/\/(?:(?<user>.+):(?<pwd>.+)@)?(?<host>[^\/]+?)(?<name>\/.+?)?(?<opts>\?.+)?$/
-    const match = url.match(rx)
-
-    if (!match)
-      return null
-
-    let name
-
-    if (match.groups.name)
-      name = match.groups.name.substring(1)
-
-      return {
-        origin: 'mongodb://',
-        username: match.groups.user,
-        password: match.groups.pwd,
-        host: match.groups.host, // multiple hosts accepted, returned as a plain string
-        name: name, // authentication db
-
-        // options not needed for now, don't need to return them
-      }
-  }
-
   // connecto to Mongo using native driver
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise(async (resolve, reject) => {
-      const url = DbConnector._parseMongoString(config.connectionString)
-      const connString = await this.buildConnectionString(config, url)
+      const uri = await this.buildConnectionString(config)
+      const authdb = uri.pathname.substring(1)
 
-      if (!url.name && !config.name)
+      if (!authdb && !config.name)
         return reject('No DB name in connection string or config')
 
-      mongoclient.connect(connString, {useUnifiedTopology: true}, (err, client) => {
-        let clientName = (config.name || url.name).toString() // name of the mongo client for the connection
+      mongoclient.connect(uri.toString(), {useUnifiedTopology: true}, (err, client) => {
+        let clientName = (config.name || authdb).toString() // name of the mongo client for the connection
         if (err != null)
           return reject(new VError(err, `Mongo/${clientName} connection error`))
 
         // names of database to reference
         let dbNames
         if (!config.name)
-          dbNames = [url.name] // when no name is provided, use auth db
+          dbNames = [authdb] // when no name is provided, use auth db
         else if (typeof config.name === 'string')
           dbNames = [config.name]
         else if (Array.isArray(config.name))
@@ -217,8 +186,8 @@ class DbConnector {
 
   async _connectMysql(config, mysql){
     this._connPromises.push(new Promise(async (resolve, reject) => {
-      const connString = await this.buildConnectionString(config, null)
-      const mySqlPool = mysql.createPool(connString)
+      const uri = await this.buildConnectionString(config)
+      const mySqlPool = mysql.createPool(uri.toString())
       if (!mySqlPool)
         return reject(new VError(`Invalid MySql/${config.name} connection string`))
 
@@ -237,9 +206,9 @@ class DbConnector {
   // connect to Redis
   _connectRedis(config, redis){
     this._connPromises.push(new Promise(async (resolve, reject) => {
-      const connString = await this.buildConnectionString(config, null)
+      const uri = await this.buildConnectionString(config)
       let connected = false
-      const client = redis.createClient({url: connString})
+      const client = redis.createClient({url: uri.toString()})
      
       // client will emit error when encountering an error connecting to the Redis server
       // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet

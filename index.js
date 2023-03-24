@@ -66,6 +66,33 @@ class DbConnector {
     return Promise.all(this._connPromises)
   }
 
+  async buildConnectionString(config, url){
+    let connString = config.connectionString
+    if (config.secret){
+      try{
+        const secret = await secretMgr.getSecret(config.secret)
+        if (typeof secret === 'object'){
+          if (url){
+            url.username = secret.username
+            url.password = secret.password
+            if (secret.authdb)
+              url.name = secret.authdb
+          }
+          connString = config.connectionString
+            .replace('username', secret.username)
+            .replace('password', secret.password)
+            .replace('authdb', secret.authdb)
+          return connString
+        }
+      }
+      catch(ex){
+        throw new Error(ex)
+      }
+    }
+    else
+      return connString
+  }
+
   // close all connections
   close(){
     this._closePromises = [
@@ -135,28 +162,7 @@ class DbConnector {
   _connectMongo(config, mongoclient){
     this._connPromises.push(new Promise(async (resolve, reject) => {
       const url = DbConnector._parseMongoString(config.connectionString)
-
-      let connString = config.connectionString 
-      let secret
-      if (config.secret){
-        try{
-          secret = await secretMgr.getSecret(config.secret)
-          if (typeof secret === 'object'){
-            url.username = secret.username
-            url.password = secret.password
-            if (secret.authdb)
-              url.name = secret.authdb
-
-            connString = config.connectionString.replace('username', secret.username)
-              .replace('password', secret.password)
-              .replace('authdb', secret.authdb)
-            
-          }
-        }
-        catch(ex){
-          reject(ex)
-        }
-      }
+      const connString = await this.buildConnectionString(config, url)
 
       if (!url.name && !config.name)
         return reject('No DB name in connection string or config')
@@ -206,12 +212,13 @@ class DbConnector {
     }))
   }
 
-  _connectMysql(config, mysql){
-    var mySqlPool = mysql.createPool(config.connectionString)
-    if (!mySqlPool)
-      return this._connPromises.push(Promise.reject(new VError(`Invalid MySql/${config.name} connection string`)))
+  async _connectMysql(config, mysql){
+    this._connPromises.push(new Promise(async (resolve, reject) => {
+      const connString = await this.buildConnectionString(config, null)
+      const mySqlPool = mysql.createPool(connString)
+      if (!mySqlPool)
+        return reject(new VError(`Invalid MySql/${config.name} connection string`))
 
-    this._connPromises.push(new Promise((resolve, reject) => {
       mySqlPool.getConnection((err, cnx) => {
         if (err)
           return reject(new VError(err, `Mysql/${config.name} connection error`))
@@ -226,9 +233,10 @@ class DbConnector {
 
   // connect to Redis
   _connectRedis(config, redis){
-    this._connPromises.push(new Promise((resolve, reject) => {
+    this._connPromises.push(new Promise(async (resolve, reject) => {
+      const connString = await this.buildConnectionString(config, null)
       let connected = false
-      const client = redis.createClient({url: config.connectionString})
+      const client = redis.createClient({url: connString})
      
       // client will emit error when encountering an error connecting to the Redis server
       // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet

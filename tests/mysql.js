@@ -18,10 +18,10 @@ describe("MySQL", () => {
   const sut = require('../index.js')
   it('connect', async () => {
     await sut.init([{name: 'stg_cms', connectionString: connStrings.mysql_staging}])
-    assert.isNotNull(sut.stg_cms)
+    return assert.isNotNull(sut.stg_cms)
   })
   it('close', async () => {
-    await sut.close()
+    return sut.close()
   })
 })
 

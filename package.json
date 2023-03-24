@@ -1,6 +1,6 @@
 {
   "name": "node-db-connector",
-  "version": "5.0.2",
+  "version": "5.1.0",
   "description": "Unified db management",
   "main": "index.js",
   "scripts": {
@@ -24,10 +24,11 @@
   },
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
   "dependencies": {
-    "mongodb": "^4.2.1",
+    "@aws-sdk/client-secrets-manager": "^3.297.0",
+    "mongodb": "^4.14.0",
     "promise-mysql": "^3.3.2",
     "promise-redis-legacy": "^1.0.0",
-    "verror": "^1.9.0"
+    "verror": "^1.10.1"
   },
   "devDependencies": {
     "chai": "^4.1.2",

@@ -109,11 +109,14 @@ class DbConnector {
     if (this._options.mongoose == null)
       throw new VError('Mongoose object must be provided')
 
-    this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
-    this._options.mongoose.connect(config.connectionString, { useMongoClient: true })
-    var mongoosedb = this._options.mongoose.connection
-    this._mongooseDbName = config.name
-    this._connPromises.push(new Promise((resolve, reject) => {
+    this._connPromises.push(new Promise(async (resolve, reject) => {
+
+      const connString = await this.buildConnectionString(config, null)
+      this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
+      
+      this._options.mongoose.connect(connString, { useMongoClient: true })
+      var mongoosedb = this._options.mongoose.connection
+      this._mongooseDbName = config.name
 
       // custom timeout when mongoose doesn't raise an error at all
       let tm = setTimeout(() => {

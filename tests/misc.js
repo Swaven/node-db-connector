@@ -14,9 +14,9 @@ function clearCache(){
 describe('Build connection string', () => {
   clearCache()
 
-  let sut = require('../index.js')
+  let sut = require('../src/connectionUri.js')
   it('invalid secret', async () => {
-    const p = sut.buildConnectionString({
+    const p = sut.parse({
       connectionString: 'mongo://127.0.0.1:29800/wtb',
       secret: 'invalidSecret'
     })

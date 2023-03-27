@@ -1,6 +1,6 @@
 {
   "name": "node-db-connector",
-  "version": "5.2.0",
+  "version": "6.0.0",
   "description": "Unified db management",
   "main": "index.js",
   "scripts": {

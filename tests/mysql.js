@@ -43,7 +43,7 @@ samples.forEach(sample => {
   clearCache()
 
   describe(sample.test, () => {
-    const sut = require('../index.js')
+    const sut = require('../src/index.js')
     it('connect', async () => {
       await sut.init([sample.cfg])
       return assert.isNotNull(sut.stg_cms)

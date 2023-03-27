@@ -84,12 +84,12 @@ samples.forEach(sample => {
   clearCache()
 
   describe(sample.test, () => {
-    let sut = require('../index.js')
+    let sut = require('../src/index.js')
     it('connect', async () => {
       await sut.init([sample.cfg])
 
       let docs = await sut[sample.db].collection('widget_confs').find().limit(5).toArray()
-      assert.isAbove(docs.length, 0)
+      return assert.isAbove(docs.length, 0)
     })
 
     it('close', async () => {
@@ -101,12 +101,12 @@ samples.forEach(sample => {
 // use another db than the one in auth
 describe('Single, other DB, local', () => {
   clearCache()
-  let sut = require('../index.js')
+  let sut = require('../src/index.js')
   it('connect', async () => {
     await sut.init([{name: 'affiliate', connectionString: connStrings.stg_admin}])
 
     let docs = await sut.affiliate.collection('collect_tasks').find().limit(10).toArray()
-    assert.isAbove(docs.length, 0)
+    return assert.isAbove(docs.length, 0)
   })
 
   it('close', async () => {
@@ -116,7 +116,7 @@ describe('Single, other DB, local', () => {
 
 describe('Single, no name', () => {
   clearCache()
-  let sut = require('../index.js')
+  let sut = require('../src/index.js')
   it('connect', async () => {
     let error = null
     try{
@@ -133,7 +133,7 @@ describe('Single, no name', () => {
 
 describe('Multiple aliased, local', () => {
   clearCache()
-  let sut = require('../index.js')
+  let sut = require('../src/index.js')
   it('connect', async () => {
     await sut.init([{
       name: 'wtb:foo', connectionString: connStrings.stg_local
@@ -152,7 +152,7 @@ describe('Multiple aliased, local', () => {
 
 describe('Slash separator', () => {
   clearCache()
-  let sut = require('../index.js')
+  let sut = require('../src/index.js')
   it('connect', async () => {
     await sut.init([{name: 'wtb/foo', connectionString: connStrings.stg_admin}], {separator: '/'})
 
@@ -166,7 +166,7 @@ describe('Slash separator', () => {
 })
 
 describe('chained inits', () => {
-  const sut = require('../index.js')
+  const sut = require('../src/index.js')
   it('reinit', () => {
     return sut.init([{connectionString: connStrings.stg_local}])
     .then(() => {

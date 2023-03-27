@@ -15,12 +15,12 @@ if (invalid){
 }
 
 describe("Redis", () => {
-  const sut = require('../index.js')
+  const sut = require('../src/index.js')
   it('connect', async () => {
-    await sut.init([{name: 'local', connectionString: 'redis://127.0.0.1:6379'}])
+    return sut.init([{name: 'local', connectionString: 'redis://127.0.0.1:6379'}])
   })
   it('close', async () => {
-    await sut.close()
+    return sut.close()
   })
 })
 

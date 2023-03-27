@@ -4,13 +4,13 @@
   DB Connector sample code to help during development.
 */
 
-const db = require('./index.js')
+const db = require('./src/index.js')
 
 void async function(){
   try{
     await db.init([{
-      connectionString: 'mongodb://username:password@stg.mongodb.internal.swaven.com:29800/authdb',
-      secret: 'stg-mongo-awe-2'
+      connectionString: 'mongodb://stg.mongodb.internal.swaven.com:29800/wtb',
+      // secret: 'stg-mongo-awe-2'
     }])
     console.log('DB open')
 

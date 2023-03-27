@@ -56,7 +56,6 @@ class ConnectionURI{
 
     const qs = this.options ? '?' + this.options : ''
     const v = `${this.protocol}://${creds}${this.host}/${this.authdb}${qs}`
-    console.debug(v)
     return v
   }
 }

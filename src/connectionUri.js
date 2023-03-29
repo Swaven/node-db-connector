@@ -1,3 +1,4 @@
+const VError = require('verror')
 const secretMgr = require('./aws-secrets.js')
 
 class ConnectionURI{

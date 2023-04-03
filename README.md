@@ -48,11 +48,19 @@ connectionString | `string` | ✓ | the connection string to connect to the DB.
 name | `string` or `string[]` | | Name the database will be referenced after. If not provided for Mongo, the database is referenced after the db name provided in the connection string.<br>For Mongo DBs, the property can be an array of strings. The first value will reference the main db (the one  in the connection string). The other values must be the names of other databases the connection string gives access to.  
 secret | `string` | | Id of the AWS secret that stores credentials.
 
-Secrets are expected to be valid JSON with `username`, `password` and (optionally) `authdb`.
+Secrets are expected to be valid JSON with `username`, `password` and (optionally) `authdb`. If a secret is used and provides all 3 fields, the connection string only needs to include the protocol, host and options.
 
 Examples:
 
 ````javascript
+    {
+       connectionString: 'mongodb://internal.prod-critical-db.com?readPreference=primary',
+       secret: 'db-admin-sensitive-credentials'
+    }
+    {
+       connectionString: 'mongodb://192.168.6.9:27017/wtb',
+       secret: 'my-secret-with-credentials'
+    },
     {
        connectionString: 'mongodb://user:pwd@192.168.6.9:27017/dashboard',
        mongoose: true

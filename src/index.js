@@ -27,7 +27,7 @@ class DbConnector {
     this._options.separator = this._options.separator || ':'
 
     // find mongoose connection
-    var mongooseIdx = configs.findIndex((x) => {return x.mongoose === true})
+    var mongooseIdx = configs.findIndex((x) => {return x.mongoose !== undefined})
     if (mongooseIdx >= 0){
       let mongooseConfig = configs.splice(mongooseIdx, 1)[0] // get mongoose config and remove it from array
       this._connectMongoose(mongooseConfig)
@@ -85,7 +85,7 @@ class DbConnector {
       const uri = await ConnectionURI.parse(config)
       this._options.mongoose.Promise = global.Promise // tells mongoose to use native Promise
       
-      this._options.mongoose.connect(uri.toString(), { useMongoClient: true })
+      this._options.mongoose.connect(uri.toString(), typeof config.mongoose === 'object' ? config.mongoose : null)
       var mongoosedb = this._options.mongoose.connection
       this._mongooseDbName = config.name
 

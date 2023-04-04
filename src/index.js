@@ -27,7 +27,7 @@ class DbConnector {
     this._options.separator = this._options.separator || ':'
 
     // find mongoose connection
-    var mongooseIdx = configs.findIndex((x) => {return x.mongoose !== undefined})
+    var mongooseIdx = configs.findIndex((x) => {return x.mongoose})
     if (mongooseIdx >= 0){
       let mongooseConfig = configs.splice(mongooseIdx, 1)[0] // get mongoose config and remove it from array
       this._connectMongoose(mongooseConfig)

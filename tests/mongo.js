@@ -72,7 +72,7 @@ const samples = [
       name: 'wtb'
     },
     db: 'wtb'
-  }
+  },
 ]
 
 
@@ -97,6 +97,34 @@ samples.forEach(sample => {
     })
   })
 })
+
+
+describe('Mongoose', () => {
+  clearCache()
+  let sut = require('../src/index.js')
+
+  const mongoose = require('mongoose')
+  
+  let opts = { mongoose }
+  
+
+  it('connect', async () => {
+    const cfg ={
+      name: 'mongodb',
+      mongoose: true,
+      multi: true,
+      connectionString: 'mongodb://eu-west-1.mongodb-rs0-1.internal.swaven.com:29800,eu-west-1.mongodb-rs0-2.internal.swaven.com:29800,eu-west-1.mongodb-rs0-3.internal.swaven.com:29800/?replicaSet=rs0&readPreference=primaryPreferred',
+      secret: 'prd-db-credentials-mongo-data-bo'
+    }
+
+    await sut.init([cfg], opts)
+  })
+
+  it('close', async () => {
+    await sut.close()
+  })
+})
+
 
 // use another db than the one in auth
 describe('Single, other DB, local', () => {

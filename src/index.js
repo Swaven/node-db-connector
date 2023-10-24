@@ -221,6 +221,9 @@ class DbConnector {
 
   //  close all native mongos connections
   _closeMongos(){
+    if (this._mongoClients == null)
+      return
+
     this._mongoDbNames.forEach(alias => {
       delete this[alias]
     })

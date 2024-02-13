@@ -34,7 +34,7 @@ class DbConnector {
     }
 
     // find & connect to mongo DBs
-    var mongoConfigs = configs.filter((x) => {return x.connectionString.startsWith('mongodb://')})
+    var mongoConfigs = configs.filter((x) => {return x.connectionString.startsWith('mongodb')})
     if (mongoConfigs.length > 0){
       let mongoclient = require('mongodb').MongoClient
       for (let cfg of mongoConfigs){

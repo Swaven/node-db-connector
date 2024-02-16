@@ -9,7 +9,7 @@ const db = require('./src/index.js')
 void async function(){
   try{
     await db.init([{
-      connectionString: 'mongodb://stg.mongodb.internal.swaven.com:29800/wtb',
+      connectionString: 'mongodb+srv://commerce-experience-stg-pl-0.n6iv5.mongodb.net/wtb',
       // secret: 'stg-mongo-awe-2'
     }])
     console.log('DB open')

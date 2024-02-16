@@ -14,7 +14,7 @@ class ConnectionURI{
   static async parse(config){
     let uri
     try{
-      const rx = /^(?<schema>mongodb|redis|mysql):\/\/(?:(?<user>.+):(?<pwd>.+)@)?(?<host>[^\/]+?)(?:\/(?<name>.+?))?(?:\?(?<opts>.+))?$/
+      const rx = /^(?<schema>mongodb(\+srv)?|redis|mysql):\/\/(?:(?<user>.+):(?<pwd>.+)@)?(?<host>[^\/]+?)(?:\/(?<name>.+?))?(?:\?(?<opts>.+))?$/
       const m = config.connectionString.match(rx)
       if (!m)
         throw new Error('Invalid connection string')

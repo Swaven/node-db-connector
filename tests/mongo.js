@@ -58,7 +58,7 @@ const samples = [
   {
     test: 'Secret',
     cfg: {
-      connectionString: 'mongodb://username:password@stg.mongodb.internal.swaven.com:29800/authdb',
+      connectionString: 'mongodb+srv://username:password@commerce-experience-stg-pl-0.n6iv5.mongodb.net/authdb',
       secret: 'stg-mongo-awe-2',
       name: 'wtb'
     },
@@ -67,7 +67,7 @@ const samples = [
   {
     test: 'Secret no auth',
     cfg: {
-      connectionString: 'mongodb://stg.mongodb.internal.swaven.com:29800',
+      connectionString: 'mongodb+srv://commerce-experience-stg-pl-0.n6iv5.mongodb.net',
       secret: 'stg-mongo-awe-2',
       name: 'wtb'
     },

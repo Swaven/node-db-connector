@@ -224,12 +224,12 @@ class DbConnector {
     if (this._mongoClients == null)
       return
 
-    this._mongoDbNames.forEach(alias => {
+    this._mongoDbNames?.forEach(alias => {
       delete this[alias]
     })
     this._mongoDbNames = null
 
-    this._mongoClients.forEach((client) => {
+    this._mongoClients?.forEach((client) => {
       this._closePromises.push(client.client.close().then(() => {
         self._logger.info(`Mongo/${client.name} connection closed`)
       })
@@ -245,7 +245,7 @@ class DbConnector {
 
   // closes all mysql connections
   _closeMysql(){
-    this._mysqlDbNames.forEach((dbName) => {
+    this._mysqlDbNames?.forEach((dbName) => {
       this._closePromises.push(this[dbName].end().then(() => {
         self._logger.info(`Mysql/${dbName} connection closed`)
       })
@@ -258,7 +258,7 @@ class DbConnector {
 
   //  close all redis connections
   _closeRedis(){
-    this._redisDbNames.forEach((dbName)=>{
+    this._redisDbNames?.forEach((dbName)=>{
       if (this[dbName] == null)
         return
       this._closePromises.push(new Promise(async (resolve, reject) => {

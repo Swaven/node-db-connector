@@ -2,7 +2,7 @@
 Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql and Redis databases.
 
 It uses the following drivers:  
-Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/4.2/)  
+Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/5.9.2/)  
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
 Redis: [promise-redis-legacy](https://github.com/swaven/promise-redis-legacy)  
 **PostgreSQL support was removed in version 3.0.0 as we do not use it anymore.**

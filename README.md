@@ -130,4 +130,14 @@ Closes all connections.
 
 ## Tests
 
-`npm test` or `mocha tests` to run all tests.
+`npm test` or `mocha tests` to run all tests. Connection strings must be in a file in `tests/connectionStrings.json`. The JSON object must be of the following form:
+
+````json
+{
+  "stg_admin": "mongodb://user:pwd@host:27017",
+  "stg_admin_wrong_db": "mongodb://user:pwd@host:27017/wtb",
+  "stg_local": "mongodb://user:pwd@host:27017/wtb",
+  "stg_local_wrong_db": "mongodb://user:pwd@host:27017"
+}
+
+````

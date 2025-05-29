@@ -1,5 +1,6 @@
 const VError = require('verror')
 const ConnectionURI = require('./connectionUri.js')
+const MongoDB = require('mongodb');
 
 class DbConnector {
   constructor(){
@@ -36,9 +37,8 @@ class DbConnector {
     // find & connect to mongo DBs
     var mongoConfigs = configs.filter((x) => {return x.connectionString.startsWith('mongodb')})
     if (mongoConfigs.length > 0){
-      let mongoclient = require('mongodb').MongoClient
       for (let cfg of mongoConfigs){
-        this._connectMongo(cfg, mongoclient)
+        this._connectMongo(cfg)
       }
     }
 
@@ -108,7 +108,7 @@ class DbConnector {
   }
 
   // connecto to Mongo using native driver
-  _connectMongo(config, mongoclient){
+  _connectMongo(config){
     this._connPromises.push(new Promise(async (resolve, reject) => {
       const uri = await ConnectionURI.parse(config)
       
@@ -116,7 +116,8 @@ class DbConnector {
       if (!uri.authdb && !config.name)
         return reject('No DB name in connection string or config')
 
-      mongoclient.connect(uri.toString(), {useUnifiedTopology: true}, (err, client) => {
+      const mongoclient = new MongoDB.MongoClient(uri)
+      mongoclient.connect(uri.toString(), (err, client) => {
         let clientName = (config.name || uri.authdb).toString() // name of the mongo client for the connection
         if (err != null)
           return reject(new VError(err, `Mongo/${clientName} connection error`))

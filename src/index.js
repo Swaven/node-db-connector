@@ -36,9 +36,9 @@ class DbConnector {
     // find & connect to mongo DBs
     var mongoConfigs = configs.filter((x) => {return x.connectionString.startsWith('mongodb')})
     if (mongoConfigs.length > 0){
-      let mongoclient = require('mongodb').MongoClient
+      const mongodb = require('mongodb');
       for (let cfg of mongoConfigs){
-        this._connectMongo(cfg, mongoclient)
+        this._connectMongo(mongodb, cfg)
       }
     }
 
@@ -108,56 +108,56 @@ class DbConnector {
   }
 
   // connecto to Mongo using native driver
-  _connectMongo(config, mongoclient){
+  _connectMongo(mongodb, config){
     this._connPromises.push(new Promise(async (resolve, reject) => {
       const uri = await ConnectionURI.parse(config)
       
-
       if (!uri.authdb && !config.name)
         return reject('No DB name in connection string or config')
+      
+      const clientName = (config.name || uri.authdb).toString() // name of the mongo client for the connection
+      const mongoclient = new mongodb.MongoClient(uri.toString())
+      mongoclient.connect()
+        .then((client) => {
+          // names of database to reference
+          let dbNames
+          if (!config.name)
+            dbNames = [uri.authdb] // when no name is provided, use auth db
+          else if (typeof config.name === 'string')
+            dbNames = [config.name]
+          else if (Array.isArray(config.name))
+            dbNames = config.name
+          else
+            return reject(new VError('Name must be a string or an aray of string'))
 
-      mongoclient.connect(uri.toString(), {useUnifiedTopology: true}, (err, client) => {
-        let clientName = (config.name || uri.authdb).toString() // name of the mongo client for the connection
-        if (err != null)
+          if (this[clientName])
+            return reject(new VError('Cannot reference multiple clients with name %s', clientName))
+
+          // keep ref of reference connected client
+          this._mongoClients.push({
+            name: clientName, // for log/display purpose only
+            client: client
+          })
+
+          // reference all dbs.
+          // They all use the same client/socket connection.
+          for (let name of dbNames){
+            let alias
+            [name, alias] = name.split(this._options.separator)
+            alias = alias || name
+
+            if (this[alias])
+              return reject(VError('Cannot have multiple connections to alias %s', alias))
+
+            this[alias] = client.db(name)
+            this._mongoDbNames.push(alias)
+          }
+
+          this._logger.info(`Mongo/${clientName} connection ok`)
+          resolve()
+        }, (err) => {
           return reject(new VError(err, `Mongo/${clientName} connection error`))
-
-        // names of database to reference
-        let dbNames
-        if (!config.name)
-          dbNames = [uri.authdb] // when no name is provided, use auth db
-        else if (typeof config.name === 'string')
-          dbNames = [config.name]
-        else if (Array.isArray(config.name))
-          dbNames = config.name
-        else
-          return reject(new VError('Name must be a string or an aray of string'))
-
-        if (this[clientName])
-          return reject(new VError('Cannot reference multiple clients with name %s', clientName))
-
-        // keep ref of reference connected client
-        this._mongoClients.push({
-          name: clientName, // for log/display purpose only
-          client: client
         })
-
-        // reference all dbs.
-        // They all use the same client/socket connection.
-        for (let name of dbNames){
-          let alias
-          [name, alias] = name.split(this._options.separator)
-          alias = alias || name
-
-          if (this[alias])
-            throw new VError('Cannot have multiple connections to alias %s', alias)
-
-          this[alias] = client.db(name)
-          this._mongoDbNames.push(alias)
-        }
-
-        this._logger.info(`Mongo/${clientName} connection ok`)
-        resolve()
-      })
     }))
   }
 

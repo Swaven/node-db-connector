@@ -1,6 +1,5 @@
 const VError = require('verror')
 const ConnectionURI = require('./connectionUri.js')
-const MongoDB = require('mongodb');
 
 class DbConnector {
   constructor(){
@@ -37,8 +36,9 @@ class DbConnector {
     // find & connect to mongo DBs
     var mongoConfigs = configs.filter((x) => {return x.connectionString.startsWith('mongodb')})
     if (mongoConfigs.length > 0){
+      const mongodb = require('mongodb');
       for (let cfg of mongoConfigs){
-        this._connectMongo(cfg)
+        this._connectMongo(mongodb, cfg)
       }
     }
 
@@ -108,7 +108,7 @@ class DbConnector {
   }
 
   // connecto to Mongo using native driver
-  _connectMongo(config){
+  _connectMongo(mongodb, config){
     this._connPromises.push(new Promise(async (resolve, reject) => {
       const uri = await ConnectionURI.parse(config)
       
@@ -116,7 +116,7 @@ class DbConnector {
         return reject('No DB name in connection string or config')
       
       const clientName = (config.name || uri.authdb).toString() // name of the mongo client for the connection
-      const mongoclient = new MongoDB.MongoClient(uri.toString())
+      const mongoclient = new mongodb.MongoClient(uri.toString())
       mongoclient.connect()
         .then((client) => {
           // names of database to reference

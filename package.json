@@ -4,7 +4,8 @@
   "description": "Unified db management",
   "main": "src/index.js",
   "scripts": {
-    "test": "mocha tests"
+    "test": "mocha tests",
+    "shrinkwrap:production": "rm -f npm-shrinkwrap.json && rm -rf node_modules && npm install --omit=dev --no-audit --no-fund && npm shrinkwrap"
   },
   "repository": {
     "type": "git",
@@ -24,12 +25,12 @@
   },
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "^3.1031.0",
-    "@mongodb-js/saslprep": "^1.4.6",
-    "mongodb": "^6.21.0",
-    "promise-mysql": "^3.3.2",
-    "promise-redis-legacy": "^1.0.1",
-    "verror": "^1.10.1"
+    "@aws-sdk/client-secrets-manager": "3.1031.0",
+    "@mongodb-js/saslprep": "1.4.6",
+    "mongodb": "6.21.0",
+    "promise-mysql": "3.3.2",
+    "promise-redis-legacy": "1.0.1",
+    "verror": "1.10.1"
   },
   "devDependencies": {
     "chai": "^4.5.0",

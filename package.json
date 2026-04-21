@@ -4,8 +4,7 @@
   "description": "Unified db management",
   "main": "src/index.js",
   "scripts": {
-    "test": "mocha tests",
-    "shrinkwrap:production": "rm -f npm-shrinkwrap.json && rm -rf node_modules && npm install --omit=dev --no-audit --no-fund && npm shrinkwrap"
+    "test": "mocha tests"
   },
   "repository": {
     "type": "git",

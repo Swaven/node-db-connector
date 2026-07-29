@@ -4,7 +4,7 @@ Unified db connection mgmt: provides a simple way to connect to MongoDB, Mysql a
 It uses the following drivers:  
 Mongo: [Mongoose](http://mongoosejs.com/) or [native driver](http://mongodb.github.io/node-mongodb-native/4.17.2/)  
 Mysql: [promise-mysql](https://github.com/lukeb-uk/node-promise-mysql)  
-Redis: [promise-redis-legacy](https://github.com/swaven/promise-redis-legacy)  
+Redis: [redis](https://github.com/redis/node-redis)  
 **PostgreSQL support was removed in version 3.0.0 as we do not use it anymore.**
 
 This package only handles connection & disconnect. Please refer to each driver's own documentation for how to query the DBs.
@@ -27,6 +27,10 @@ This package only handles connection & disconnect. Please refer to each driver's
       console.error('Something horrible happened: ' + err)
     }
 ````
+
+## Breaking changes
+
+⚠️ **node-db-connector@v7** does not comes with its own redis driver anymore. It's up to dependant packages to install it if they use a redis connection.
 
 ## API
 

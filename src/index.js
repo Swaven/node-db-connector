@@ -54,7 +54,7 @@ class DbConnector {
     // find redis configs
     var redisConfigs = configs.filter((x) => {return x.connectionString.startsWith('redis://')})
     if (redisConfigs.length > 0){
-      let redis = require('promise-redis-legacy')()
+      let redis = require('redis')
 
       for (let cfg of redisConfigs){
         this._connectRedis(cfg, redis)

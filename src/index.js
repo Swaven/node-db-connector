@@ -185,8 +185,12 @@ class DbConnector {
     this._connPromises.push(new Promise(async (resolve, reject) => {
       const uri = await ConnectionURI.parse(config)
       let connected = false
-      const client = redis.createClient({url: uri.toString()})
-     
+      const client = redis.createClient({
+        url: uri.toString(),
+        keepAlive: 30e3,
+        pingInterval: 30e3,
+      })
+
       // client will emit error when encountering an error connecting to the Redis server
       // OR when any other in node_redis occurs, that's why reject method is called only if client not connected yet
       client.on("error", err => {

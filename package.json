@@ -23,6 +23,9 @@
     "url": "https://github.com/Swaven/node-db-connector/issues"
   },
   "homepage": "https://github.com/Swaven/node-db-connector#readme",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "3.1031.0",
     "@mongodb-js/saslprep": "1.4.6",
@@ -33,7 +36,13 @@
   "devDependencies": {
     "chai": "^4.5.0",
     "chai-as-promised": "^7.1.2",
-    "mocha": "^11.7.5",
+    "mocha": "^12.0.3",
     "redis": "^6.1.0"
+  },
+  "overrides": {
+    "mocha": {
+      "glob": "^14.0.6",
+      "minimatch": "^11.0.9"
+    }
   }
 }
